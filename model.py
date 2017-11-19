@@ -49,10 +49,9 @@ def prepare_data():
 		x_data.append(row.right_img)
 		y_data.append([row.speed/max_speed, (row.steering_angle - 0.25)/max_steering_angle])
 
-	x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.20)
-	x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
+	x_train, x_val, y_train, y_val = train_test_split(x_data, y_data, test_size=0.20)
 
-	return x_train, x_test, x_val , y_train, y_test, y_val
+	return x_train, x_val , y_train, y_val
 
 
 def data_generator(x_data, y_data, batch_size):
@@ -96,7 +95,7 @@ def main():
 
 	batch_size = 256
 
-	x_train, x_test, x_val , y_train, y_test, y_val = prepare_data()
+	x_train, x_val , y_train, y_val = prepare_data()
 
 	train_generator = data_generator(x_train, y_train , batch_size=batch_size)
 	validation_generator = data_generator(x_val, y_val, batch_size=batch_size)
@@ -105,7 +104,7 @@ def main():
 	model = nn_model(input_shape)
 
 	model.fit_generator(train_generator, steps_per_epoch=len(x_train)/batch_size, validation_data=validation_generator,
-						validation_steps=len(x_val)/batch_size, nb_epoch=2)
+						validation_steps=len(x_val)/batch_size, nb_epoch=3)
 
 	model.save('model.h5')
 
