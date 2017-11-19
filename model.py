@@ -87,7 +87,7 @@ def nn_model(input_shape):
 	model.add(Flatten())
 	model.add(Dense(100, activation='relu'))
 	model.add(Dropout(0.75))
-	model.add(Dense(50, activation='relu'))
+	model.add(Dense(10, activation='relu'))
 	model.add(Dropout(0.75))
 	model.add(Dense(1))
 
@@ -109,7 +109,7 @@ def main():
 	model = nn_model(input_shape)
 
 	model.fit_generator(train_generator, steps_per_epoch=len(x_train)/batch_size, validation_data=validation_generator,
-						validation_steps=len(x_val)/batch_size, nb_epoch=3)
+						validation_steps=len(x_val)/batch_size, nb_epoch=5)
 
 	model.save('model.h5')
 
