@@ -77,7 +77,7 @@ def nn_model(input_shape):
 	model = Sequential()
 
 	model.add(Cropping2D(cropping=((60,20), (0,0)), input_shape=input_shape))
-	model.add(Lambda(lambda x: x/127.5 - 1.0)
+	model.add(Lambda(lambda x: x/127.5 - 1.0))
 	model.add(Conv2D(16, kernel_size=(5,5), activation='relu', input_shape=input_shape))
 	model.add(MaxPooling2D(pool_size=(2,2)))
 	model.add(Flatten())
