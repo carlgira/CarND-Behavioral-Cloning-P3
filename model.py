@@ -39,15 +39,18 @@ def prepare_data():
 	for index, row in driving_log_clean.iterrows():
 		# Center Image
 		x_data.append(row.center_img)
-		y_data.append([row.speed/max_speed, (row.steering_angle)/max_steering_angle])
+		y_data.append(row.steering_angle)
+		#y_data.append([row.speed/max_speed, (row.steering_angle)/max_steering_angle])
 
 		# Left Image
 		x_data.append(row.left_img)
-		y_data.append([row.speed/max_speed, (row.steering_angle + 0.25)/max_steering_angle])
+		#y_data.append([row.speed/max_speed, (row.steering_angle + 0.25)/max_steering_angle])
+		y_data.append(row.steering_angle + 0.25)
 
 		# Right Image
 		x_data.append(row.right_img)
-		y_data.append([row.speed/max_speed, (row.steering_angle - 0.25)/max_steering_angle])
+		#y_data.append([row.speed/max_speed, (row.steering_angle - 0.25)/max_steering_angle])
+		y_data.append(row.steering_angle - 0.25)
 
 	x_train, x_val, y_train, y_val = train_test_split(x_data, y_data, test_size=0.20)
 
@@ -79,12 +82,14 @@ def nn_model(input_shape):
 	model.add(Cropping2D(cropping=((60,20), (0,0))))
 	model.add(Conv2D(16, kernel_size=(5,5), activation='relu'))
 	model.add(MaxPooling2D(pool_size=(2,2)))
+	model.add(Conv2D(32, kernel_size=(5,5), activation='relu'))
+	model.add(MaxPooling2D(pool_size=(2,2)))
 	model.add(Flatten())
 	model.add(Dense(100, activation='relu'))
 	model.add(Dropout(0.75))
 	model.add(Dense(50, activation='relu'))
 	model.add(Dropout(0.75))
-	model.add(Dense(2))
+	model.add(Dense(1))
 
 	model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
 
