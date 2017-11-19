@@ -76,9 +76,9 @@ def nn_model(input_shape):
 
 	model = Sequential()
 
-	model.add(Cropping2D(cropping=((60,20), (0,0)), input_shape=input_shape))
-	model.add(Lambda(lambda x: x/127.5 - 1.0))
-	model.add(Conv2D(16, kernel_size=(5,5), activation='relu', input_shape=input_shape))
+	model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=input_shape))
+	model.add(Cropping2D(cropping=((60,20), (0,0))))
+	model.add(Conv2D(16, kernel_size=(5,5), activation='relu'))
 	model.add(MaxPooling2D(pool_size=(2,2)))
 	model.add(Flatten())
 	model.add(Dense(100, activation='relu'))
@@ -101,11 +101,11 @@ def main():
 	train_generator = data_generator(x_train, y_train , batch_size=batch_size)
 	validation_generator = data_generator(x_val, y_val, batch_size=batch_size)
 
-	input_shape = (70, 320, 3)
+	input_shape = (160, 320, 3)
 	model = nn_model(input_shape)
 
-	model.fit_generator(train_generator, samples_per_epoch=len(x_train), validation_data=validation_generator,
-						nb_val_samples=len(x_val), nb_epoch=2)
+	model.fit_generator(train_generator, steps_per_epoch=len(x_train)/batch_size, validation_data=validation_generator,
+						validation_steps=len(x_val)/batch_size, nb_epoch=2)
 
 	model.save('model.h5')
 
