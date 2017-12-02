@@ -15,10 +15,9 @@ max_steering_angle = 25.0
 def transform_image(img):
 	#img_transform = cv2.resize((cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)),(img_cols,img_rows))[12:img_cols,]
 
-	resized = cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), (img_cols,img_rows))[12:img_rows-4,]
-	return np.reshape(resized, (16, img_cols, 3))
-
-	#return np.reshape(img_transform, (20, img_cols, 1))
+	#resized = cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), (img_cols,img_rows))[12:img_rows-4,]
+	#return np.reshape(resized, (16, img_cols, 3))
+	return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 
 def prepare_data():
@@ -87,20 +86,31 @@ def data_generator(x_data, y_data, batch_size):
 
 def nn_model(input_shape):
 
-	model = Sequential()
-	model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=input_shape))
-
-	model.add(Conv2D(24,5,5, subsample=(2,2), activation='relu'))
-	model.add(Conv2D(64,3,3, activation='relu'))
-	model.add(Conv2D(64,3,3, activation='relu'))
-	model.add(Flatten())
-	model.add(Dense(100, activation='relu'))
-	model.add(Dropout(0.75))
-	model.add(Dense(50,activation='relu'))
-	model.add(Dropout(0.75))
-	model.add(Dense(10,activation='relu'))
-	model.add(Dropout(0.75))
-	model.add(Dense(1))
+	model = Sequential([
+		Lambda(lambda x: (x / 255.0) - 0.5, input_shape=input_shape),
+		Cropping2D(((60,20), (0,0))),
+		Conv2D(32, (3, 3), input_shape=(32, 128, 3), padding='same', activation='relu'),
+		Conv2D(64, (3, 3), padding='same', activation='relu'),
+		MaxPooling2D(),
+		Dropout(0.5),
+		Conv2D(128, (3, 3), padding='same', activation='relu'),
+		Conv2D(128, (3, 3), padding='same', activation='relu'),
+		MaxPooling2D(),
+		Dropout(0.5),
+		# Conv2D(1024, (3, 3), padding='same', activation='relu'),
+		# Conv2D(1024, (3, 3), padding='same', activation='relu'),
+		# MaxPooling2D(),
+		# Dropout(0.5),
+		# Conv2D(2048, (3, 3), padding='same', activation='relu'),
+		# Conv2D(2048, (3, 3), padding='same', activation='relu'),
+		# MaxPooling2D(),
+		# Dropout(0.5),
+		Flatten(),
+		Dense(1024, activation='relu'),
+		Dense(512, activation='relu'),
+		Dense(128, activation='relu'),
+		Dense(1, name='output'),
+	])
 
 	model.compile(optimizer=Adam(lr=1e-4), loss='mse')
 
@@ -116,11 +126,11 @@ def main():
 	train_generator = data_generator(x_train, y_train , batch_size=batch_size)
 	validation_generator = data_generator(x_val, y_val, batch_size=batch_size)
 
-	input_shape = (16, 64, 3)
+	input_shape = (160, 320, 3)
 	model = nn_model(input_shape)
 
 	model.fit_generator(train_generator, steps_per_epoch=len(x_train)/batch_size, validation_data=validation_generator,
-						validation_steps=len(x_val)/batch_size, nb_epoch=3)
+						validation_steps=len(x_val)/batch_size, nb_epoch=2)
 
 	model.save('model.h5')
 
