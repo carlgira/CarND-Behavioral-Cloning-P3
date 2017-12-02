@@ -11,6 +11,7 @@ import eventlet.wsgi
 from PIL import Image
 from flask import Flask
 from io import BytesIO
+import cv2
 
 from keras.models import load_model
 import h5py
@@ -20,6 +21,12 @@ sio = socketio.Server()
 app = Flask(__name__)
 model = None
 prev_image_array = None
+
+img_rows = 32
+img_cols = 64
+
+max_speed = 30.0
+max_steering_angle = 25.0
 
 
 class SimplePIController:
@@ -44,7 +51,7 @@ class SimplePIController:
 
 
 controller = SimplePIController(0.1, 0.002)
-set_speed = 9
+set_speed = 15
 controller.set_desired(set_speed)
 
 
@@ -61,7 +68,13 @@ def telemetry(sid, data):
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
-        steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
+
+        transformed_image_array = image_array[None, :, :, :]
+
+        resized = (cv2.resize(transformed_image_array[0],(img_cols,img_rows))[12:img_rows-4,]).reshape(1,16,img_cols,3)
+
+        steering_angle = model.predict(resized, batch_size=1)[0][0]
+        #steering_angle = steering_angle * max_steering_angle
 
         throttle = controller.update(float(speed))
 
