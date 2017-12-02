@@ -38,12 +38,14 @@ def prepare_data():
 	for i in range(len(steering_angle_bins)-1):
 		count_bins.append(len(driving_log.steering_angle[(driving_log.steering_angle > steering_angle_bins[i]) & (driving_log.steering_angle <= steering_angle_bins[i+1])  ]))
 
-	cut_line = int(np.mean(count_bins)/2)
+	cut_line = int(np.mean(count_bins)/10)
+
+	driving_log_clean = driving_log
 
 	for i in range(len(count_bins)):
-		bin_samples = driving_log[(driving_log.steering_angle > steering_angle_bins[i]) & (driving_log.steering_angle <= steering_angle_bins[i+1])  ]
+		bin_samples = driving_log_clean[(driving_log_clean.steering_angle > steering_angle_bins[i]) & (driving_log_clean.steering_angle <= steering_angle_bins[i+1])  ]
 		if len(bin_samples) > cut_line:
-			driving_log_clean = driving_log.drop(bin_samples.sample(len(bin_samples) - cut_line).index)
+			driving_log_clean = driving_log_clean.drop(bin_samples.sample(len(bin_samples) - cut_line).index)
 
 		x_data = []
 	y_data = []
