@@ -54,6 +54,11 @@ controller = SimplePIController(0.1, 0.002)
 set_speed = 15
 controller.set_desired(set_speed)
 
+def preprocess(img):
+    image = (cv2.resize((cv2.cvtColor(img, cv2.COLOR_RGB2HSV))[:, :, 1],
+                        (img_cols, img_rows)))[12:img_rows-4,].reshape(1, 16, img_cols, 1)
+    return image
+
 
 @sio.on('telemetry')
 def telemetry(sid, data):
@@ -68,15 +73,16 @@ def telemetry(sid, data):
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
-
         transformed_image_array = image_array[None, :, :, :]
 
-        resized = (cv2.resize(transformed_image_array[0],(img_cols,img_rows))[12:img_rows-4,]).reshape(1,16,img_cols,3)
+        # preprocess input image
+        preprocessed = preprocess(transformed_image_array[0])
 
-        steering_angle = model.predict(resized, batch_size=1)[0][0]
-        #steering_angle = steering_angle * max_steering_angle
+        # This model currently assumes that the features of the model are just the images. Feel free to change this.
+        steering_angle = float(model.predict(preprocessed, batch_size=1))
 
-        throttle = controller.update(float(speed))
+        # The driving model currently just outputs a constant throttle. Feel free to edit this.
+        throttle = 2.0
 
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)

@@ -10,15 +10,16 @@ from keras.regularizers import l2
 
 img_rows = 32
 img_cols = 64
+image_channels = 1
 
 max_steering_angle = 25.0
 
 def transform_image(img):
-	#img_transform = cv2.resize((cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)),(img_cols,img_rows))[12:img_cols,]
+	image = (cv2.cvtColor(img, cv2.COLOR_BGR2HSV))[:, :, 1]
+	image = image.reshape(160, 320, 1)
+	image = cv2.resize(image, (img_cols, img_rows))[12:img_rows-4,]
+	return np.reshape(image, (16, img_cols, 1))
 
-	#resized = cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), (img_cols,img_rows))[12:img_rows-4,]
-	#return np.reshape(resized, (16, img_cols, 3))
-	return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 
 def prepare_data():
@@ -38,7 +39,7 @@ def prepare_data():
 	for i in range(len(steering_angle_bins)-1):
 		count_bins.append(len(driving_log.steering_angle[(driving_log.steering_angle > steering_angle_bins[i]) & (driving_log.steering_angle <= steering_angle_bins[i+1])  ]))
 
-	cut_line = int(np.mean(count_bins)/10)
+	cut_line = int(np.mean(count_bins))
 
 	driving_log_clean = driving_log
 
@@ -66,6 +67,8 @@ def prepare_data():
 		#y_data.append([row.speed/max_speed, (row.steering_angle - 0.25)/max_steering_angle])
 		y_data.append((row.steering_angle - 0.15))
 
+
+
 	x_train, x_val, y_train, y_val = train_test_split(x_data, y_data, test_size=0.20)
 
 	return x_train, x_val, y_train, y_val
@@ -90,39 +93,13 @@ def data_generator(x_data, y_data, batch_size):
 
 def nn_model(input_shape):
 
-	model = Sequential([
-		# Normalize image to -1.0 to 1.0
-		Lambda(lambda x: (x / 255.0) - 0.5, input_shape=input_shape),
-		Cropping2D(((60,20), (0,0))),
-		# Convolutional layer 1 24@31x98 | 5x5 kernel | 2x2 stride | elu activation
-		Conv2D(24, 5, 5, border_mode='valid', activation='elu', subsample=(2, 2), init='he_normal', W_regularizer=l2(0.001)),
-		# Dropout with drop probability of .1 (keep probability of .9)
-		Dropout(.1),
-		# Convolutional layer 2 36@14x47 | 5x5 kernel | 2x2 stride | elu activation
-		Conv2D(36, 5, 5, border_mode='valid', activation='elu', subsample=(2, 2), init='he_normal', W_regularizer=l2(0.001)),
-		# Dropout with drop probability of .2 (keep probability of .8)
-		Dropout(.2),
-		# Convolutional layer 3 48@5x22  | 5x5 kernel | 2x2 stride | elu activation
-		Conv2D(48, 5, 5, border_mode='valid', activation='elu', subsample=(2, 2), init='he_normal', W_regularizer=l2(0.001)),
-		# Flatten
-		Flatten(),
-		# Dropout with drop probability of .3 (keep probability of .7)
-		Dropout(.3),
-		# Fully-connected layer 1 | 100 neurons | elu activation
-		Dense(100, activation='elu', init='he_normal', W_regularizer=l2(0.001)),
-		# Dropout with drop probability of .5
-		Dropout(.5),
-		# Fully-connected layer 2 | 50 neurons | elu activation
-		Dense(50, activation='elu', init='he_normal', W_regularizer=l2(0.001)),
-		# Dropout with drop probability of .5
-		Dropout(.5),
-		# Fully-connected layer 3 | 10 neurons | elu activation
-		Dense(10, activation='elu', init='he_normal', W_regularizer=l2(0.001)),
-		# Dropout with drop probability of .5
-		Dropout(.5),
-		# Output
-		Dense(1, activation='linear', init='he_normal')
-	])
+	model = Sequential()
+	model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=(16, img_cols, image_channels)))
+	model.add(Conv2D(2, 3, 3, border_mode='valid', activation='elu'))
+	model.add(MaxPooling2D((4, 4), (4, 4), 'valid'))
+	model.add(Dropout(0.25))
+	model.add(Flatten())
+	model.add(Dense(1))
 
 	model.compile(optimizer=Adam(lr=1e-4), loss='mse')
 
@@ -142,7 +119,7 @@ def main():
 	model = nn_model(input_shape)
 
 	model.fit_generator(train_generator, steps_per_epoch=len(x_train)/batch_size, validation_data=validation_generator,
-						validation_steps=len(x_val)/batch_size, nb_epoch=2)
+						validation_steps=len(x_val)/batch_size, nb_epoch=5)
 
 	model.save('model.h5')
 
