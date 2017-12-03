@@ -39,7 +39,7 @@ def prepare_data():
 	for i in range(len(steering_angle_bins)-1):
 		count_bins.append(len(driving_log.steering_angle[(driving_log.steering_angle > steering_angle_bins[i]) & (driving_log.steering_angle <= steering_angle_bins[i+1])  ]))
 
-	cut_line = int(np.mean(count_bins)/5)
+	cut_line = int(np.mean(count_bins))
 
 	driving_log_clean = driving_log
 
@@ -101,34 +101,45 @@ def data_generator(x_data, y_data, batch_size):
 	model.add(Dense(1))
 '''
 def nn_model(input_shape):
+	'''
+		model = Sequential()
+
+		# Normalize
+		model.add(Lambda(lambda x: x/127.5 - 1.0,input_shape=input_shape))
+
+		# Add three 5x5 convolution layers (output depth 24, 36, and 48), each with 2x2 stride
+		model.add(Conv2D(24, 5, 5, W_regularizer=l2(0.001), activation='elu'))
+		model.add(Conv2D(36, 5, 5, W_regularizer=l2(0.001), activation='elu'))
+		model.add(Conv2D(48, 5, 5, W_regularizer=l2(0.001), activation='elu'))
+
+		#model.add(Dropout(0.50))
+
+		# Add two 3x3 convolution layers (output depth 64, and 64)
+		model.add(Conv2D(64, 3, 3, W_regularizer=l2(0.001), activation='elu'))
+		#model.add(Conv2D(64, 3, 3, W_regularizer=l2(0.001), activation='elu'))
+
+		# Add a flatten layer
+		model.add(Flatten())
+
+		# Add three fully connected layers (depth 100, 50, 10), tanh activation (and dropouts)
+		model.add(Dense(100, W_regularizer=l2(0.001), activation='elu'))
+		model.add(Dropout(0.75))
+		model.add(Dense(50, W_regularizer=l2(0.001), activation='elu'))
+		model.add(Dropout(0.75))
+		model.add(Dense(10, W_regularizer=l2(0.001), activation='elu'))
+		#model.add(Dropout(0.50))
+
+		# Add a fully connected output layer
+		model.add(Dense(1))
+	'''
+
 	model = Sequential()
-
-	# Normalize
-	model.add(Lambda(lambda x: x/127.5 - 1.0,input_shape=input_shape))
-
-	# Add three 5x5 convolution layers (output depth 24, 36, and 48), each with 2x2 stride
-	model.add(Conv2D(24, 5, 5, W_regularizer=l2(0.001), activation='elu'))
-	model.add(Conv2D(36, 5, 5, W_regularizer=l2(0.001), activation='elu'))
-	model.add(Conv2D(48, 5, 5, W_regularizer=l2(0.001), activation='elu'))
-
-	#model.add(Dropout(0.50))
-
-	# Add two 3x3 convolution layers (output depth 64, and 64)
-	model.add(Conv2D(64, 3, 3, W_regularizer=l2(0.001), activation='elu'))
-	#model.add(Conv2D(64, 3, 3, W_regularizer=l2(0.001), activation='elu'))
-
-	# Add a flatten layer
+	model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=(16, img_cols, image_channels)))
+	model.add(Conv2D(32, 3, 3, border_mode='valid', activation='elu'))
+	model.add(MaxPooling2D((4, 4), (4, 4), 'valid'))
 	model.add(Flatten())
-
-	# Add three fully connected layers (depth 100, 50, 10), tanh activation (and dropouts)
-	model.add(Dense(100, W_regularizer=l2(0.001), activation='elu'))
 	model.add(Dropout(0.75))
-	model.add(Dense(50, W_regularizer=l2(0.001), activation='elu'))
-	model.add(Dropout(0.75))
-	model.add(Dense(10, W_regularizer=l2(0.001), activation='elu'))
-	#model.add(Dropout(0.50))
-
-	# Add a fully connected output layer
+	model.add(Dense(50, activation='elu'))
 	model.add(Dense(1))
 
 	model.compile(optimizer=Adam(lr=1e-4), loss='mse')
