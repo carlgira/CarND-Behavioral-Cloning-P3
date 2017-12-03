@@ -31,7 +31,7 @@ def prepare_data():
 	for i in range(1, len(files)):
 		driving_log = driving_log.append(pd.read_csv(files[i], names=['center_img', 'left_img', 'right_img', 'steering_angle', 'throttle', 'break', 'speed' ]))
 
-	num_bins = 20
+	num_bins = 30
 	steering_angle = driving_log.steering_angle
 	steering_angle_hist, steering_angle_bins = np.histogram(steering_angle, num_bins)
 
@@ -39,7 +39,7 @@ def prepare_data():
 	for i in range(len(steering_angle_bins)-1):
 		count_bins.append(len(driving_log.steering_angle[(driving_log.steering_angle > steering_angle_bins[i]) & (driving_log.steering_angle <= steering_angle_bins[i+1])  ]))
 
-	cut_line = int(np.mean(count_bins))
+	cut_line = int(np.mean(count_bins)/10)
 
 	driving_log_clean = driving_log
 
@@ -60,12 +60,12 @@ def prepare_data():
 		# Left Image
 		x_data.append(row.left_img)
 		#y_data.append([row.speed/max_speed, (row.steering_angle + 0.25)/max_steering_angle])
-		y_data.append((row.steering_angle + 0.15))
+		y_data.append((row.steering_angle + 0.2))
 
 		# Right Image
 		x_data.append(row.right_img)
 		#y_data.append([row.speed/max_speed, (row.steering_angle - 0.25)/max_steering_angle])
-		y_data.append((row.steering_angle - 0.15))
+		y_data.append((row.steering_angle - 0.2))
 
 
 
