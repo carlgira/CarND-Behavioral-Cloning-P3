@@ -91,14 +91,44 @@ def data_generator(x_data, y_data, batch_size):
 			yield shuffle(x_data_batch, y_data_batch)
 
 
-def nn_model(input_shape):
-
+'''
 	model = Sequential()
 	model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=(16, img_cols, image_channels)))
 	model.add(Conv2D(2, 3, 3, border_mode='valid', activation='elu'))
 	model.add(MaxPooling2D((4, 4), (4, 4), 'valid'))
 	model.add(Dropout(0.75))
 	model.add(Flatten())
+	model.add(Dense(1))
+'''
+def nn_model(input_shape):
+	model = Sequential()
+
+	# Normalize
+	model.add(Lambda(lambda x: x/127.5 - 1.0,input_shape=input_shape))
+
+	# Add three 5x5 convolution layers (output depth 24, 36, and 48), each with 2x2 stride
+	model.add(Conv2D(24, 5, 5, W_regularizer=l2(0.001), activation='elu'))
+	model.add(Conv2D(36, 5, 5, W_regularizer=l2(0.001), activation='elu'))
+	model.add(Conv2D(48, 5, 5, W_regularizer=l2(0.001), activation='elu'))
+
+	#model.add(Dropout(0.50))
+
+	# Add two 3x3 convolution layers (output depth 64, and 64)
+	model.add(Conv2D(64, 3, 3, W_regularizer=l2(0.001), activation='elu'))
+	#model.add(Conv2D(64, 3, 3, W_regularizer=l2(0.001), activation='elu'))
+
+	# Add a flatten layer
+	model.add(Flatten())
+
+	# Add three fully connected layers (depth 100, 50, 10), tanh activation (and dropouts)
+	model.add(Dense(100, W_regularizer=l2(0.001), activation='elu'))
+	model.add(Dropout(0.75))
+	model.add(Dense(50, W_regularizer=l2(0.001), activation='elu'))
+	model.add(Dropout(0.75))
+	model.add(Dense(10, W_regularizer=l2(0.001), activation='elu'))
+	#model.add(Dropout(0.50))
+
+	# Add a fully connected output layer
 	model.add(Dense(1))
 
 	model.compile(optimizer=Adam(lr=1e-4), loss='mse')
@@ -115,7 +145,7 @@ def main():
 	train_generator = data_generator(x_train, y_train , batch_size=batch_size)
 	validation_generator = data_generator(x_val, y_val, batch_size=batch_size)
 
-	input_shape = (160, 320, 3)
+	input_shape = (16, 64, 1)
 	model = nn_model(input_shape)
 
 	model.fit_generator(train_generator, steps_per_epoch=len(x_train)/batch_size, validation_data=validation_generator,
