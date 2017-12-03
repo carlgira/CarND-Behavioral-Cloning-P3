@@ -25,9 +25,6 @@ prev_image_array = None
 img_rows = 32
 img_cols = 64
 
-max_speed = 30.0
-max_steering_angle = 25.0
-
 
 class SimplePIController:
     def __init__(self, Kp, Ki):
@@ -48,7 +45,6 @@ class SimplePIController:
         self.integral += self.error
 
         return self.Kp * self.error + self.Ki * self.integral
-
 
 controller = SimplePIController(0.1, 0.002)
 set_speed = 15
@@ -82,7 +78,7 @@ def telemetry(sid, data):
         steering_angle = float(model.predict(preprocessed, batch_size=1))
 
         # The driving model currently just outputs a constant throttle. Feel free to edit this.
-        throttle = 2.0
+        throttle = controller.update(float(speed))
 
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
