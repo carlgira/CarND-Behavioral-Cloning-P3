@@ -39,7 +39,7 @@ def prepare_data():
 	for i in range(len(steering_angle_bins)-1):
 		count_bins.append(len(driving_log.steering_angle[(driving_log.steering_angle > steering_angle_bins[i]) & (driving_log.steering_angle <= steering_angle_bins[i+1])  ]))
 
-	cut_line = int(np.mean(count_bins)/10)
+	cut_line = int(np.mean(count_bins)/5)
 
 	driving_log_clean = driving_log
 
@@ -97,7 +97,7 @@ def nn_model(input_shape):
 	model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=(16, img_cols, image_channels)))
 	model.add(Conv2D(2, 3, 3, border_mode='valid', activation='elu'))
 	model.add(MaxPooling2D((4, 4), (4, 4), 'valid'))
-	model.add(Dropout(0.25))
+	model.add(Dropout(0.75))
 	model.add(Flatten())
 	model.add(Dense(1))
 
